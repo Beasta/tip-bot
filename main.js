@@ -1,7 +1,7 @@
 //Require the path lib.
 var path = require("path");
 var SlackBot = require('slackbots');
-var DiscordBot = require('discord.js');
+//var DiscordBot = require('discord.js');
 
 //Array of each command to its file.
 var commands;
@@ -214,7 +214,7 @@ async function main() {
     };
 
     //Create a Discord process.discordClient.
-    process.discordClient = new (DiscordBot).Client();
+    // process.discordClient = new (DiscordBot).Client();
 
     //Create a slack process.slackClient.
     process.slackClient = new SlackBot({

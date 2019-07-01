@@ -222,23 +222,23 @@ async function main() {
         name: process.settings.slack.name
     });
 
-    process.discordClient.on("ready", () => {
-        console.log(`Logged in as ${process.discordClient.user.tag}!`);
-    });
+    // process.discordClient.on("ready", () => {
+    //     console.log(`Logged in as ${process.discordClient.user.tag}!`);
+    // });
     process.slackClient.on('start', () => {
         console.log('slack bot has started!')
     });
 
     //Handle messages.
-    process.discordClient.on("message", handleDiscordMessage);
-    process.discordClient.on("messageUpdate", async (oldMsg, msg) => {
-        handleDiscordMessage(msg);
-    });
+    // process.discordClient.on("message", handleDiscordMessage);
+    // process.discordClient.on("messageUpdate", async (oldMsg, msg) => {
+    //     handleDiscordMessage(msg);
+    // });
 
     process.slackClient.on('message', handleSlackMessage);
 
     //Connect.
-    process.discordClient.login(process.settings.discord.token);
+    // process.discordClient.login(process.settings.discord.token);
 }
 
 (async () => {

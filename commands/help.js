@@ -30,9 +30,14 @@ This bot is fully open source and available at https://github.com/kayabaNerve/ti
 `;
 
 module.exports = async (msg) => {
-    msg.obj.author.send({
-        embed: {
-            description: help
-        }
-    });
+    if(msg.platform === "discord") {
+        msg.obj.author.send({
+            embed: {
+                description: help
+            }
+        });
+    } else if (msg.platform === "slack") {
+        const log = (data) => process.slackClient.postMessage(msg.obj.channel, data);
+        log('```' + help + '````');
+    }
 };

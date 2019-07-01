@@ -2,12 +2,18 @@ var pools = process.settings.pools;
 
 module.exports = async (msg) => {
     //If an argument was provided...
+    let log;
+    if(msg.platform === "discord") {
+        log = msg.obj.reply;
+    } else if (msg.platform === "slack") {
+        log = async (data) => process.slackClient.postMessage(msg.obj.channel, data);
+    }
     if (msg.text[1]) {
         var pool = msg.text[1];
         //Verufy the pool exists.
         if (Object.keys(pools).indexOf(pool) === -1) {
             //Tell the user that pool doesn't exist.
-            msg.obj.reply("That pool doesn't exist.");
+            log("That pool doesn't exist.");
             return;
         }
 
@@ -19,15 +25,15 @@ module.exports = async (msg) => {
             (pools[pool].members.indexOf(msg.sender) === -1)
         ) {
             //Tell the user they don't have permission to access that pool.
-            msg.obj.reply("You don't have permission to access that pool.");
+            log("You don't have permission to access that pool.");
             return;
         }
 
         //Tell the user the pool's balance.
-        msg.obj.reply(pools[pool].printName + " has " + (await process.core.users.getBalance(pool)).toString() + " " + process.settings.coin.symbol + ".");
+        log(pools[pool].printName + " has " + (await process.core.users.getBalance(pool)).toString() + " " + process.settings.coin.symbol + ".");
         return;
     }
 
     //If no argument was provided, tell the user thir balance.
-    msg.obj.reply("You have " + (await process.core.users.getBalance(msg.sender)).toString() + " " + process.settings.coin.symbol + ".");
+    log("You have " + (await process.core.users.getBalance(msg.sender)).toString() + " " + process.settings.coin.symbol + ".");
 };

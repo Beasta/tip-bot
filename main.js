@@ -1,5 +1,7 @@
 //Require the path lib.
 var path = require("path");
+var SlackBot = require('slackbots');
+var DiscordBot = require('discord.js');
 
 //Array of each command to its file.
 var commands;
@@ -17,7 +19,7 @@ async function parseMsg(msg) {
 }
 
 //Prepares, verifies, and formats a message.
-async function handleMessage(msg) {
+async function handleDiscordMessage(msg) {
     //Get the numeric ID of whoever sent the message.
     var sender = msg.author.id;
 
@@ -32,7 +34,7 @@ async function handleMessage(msg) {
     });
 
     //If the start of the message, is a ping to the bot, swap it for !.
-    if (text[0] === process.client.user.toString()) {
+    if (text[0] === process.discordClient.user.toString()) {
         text[1] = "!" + text[1];
         //Also remove the ping.
         text.splice(0, 1);
@@ -83,7 +85,107 @@ async function handleMessage(msg) {
     parseMsg({
         text: text,
         sender: sender,
-        obj: msg
+        obj: msg,
+        platform: 'discord'
+    });
+}
+
+
+//Prepares, verifies, and formats a message.
+async function handleSlackMessage(msg) {
+    var sender;
+    var message;
+    var channel;
+    var username;
+
+    if (msg.type === 'message') {
+        //Split among spaces. Remove any empty items.
+        message = msg.text.split(" ").filter((item) => {
+            return item !== "";
+        });
+        //Get the numeric ID of whoever sent the message.
+        sender = msg.bot_id || msg.user;
+        channel = msg.channel;
+    } else {
+        return;
+    }
+
+    const log = (data) => process.slackClient.postMessage(channel, data);
+    // process.slackClient.postMessage(channel, '@tipbot');
+
+    //Do not handle messages from itself.
+    if (msg.subtype === "bot_message"){
+        return;
+    }
+
+    console.log(channel, sender, message);
+
+    // // If the start of the message, is a ping to the bot, swap it for !.
+    // if (message[0] === message.slackClient.user.toString()) {
+    //     message[1] = "!" + message[1];
+    //     //Also remove the ping.
+    //     message.splice(0, 1);
+    // }
+
+    //Filter the message.
+    message = message
+        .join(" ")                          //Convert it back into a string.
+        .replace(/[^\x00-\x7F]/g, "")       //Remove unicode.
+        .toLowerCase()                      //Convert it to lower case.
+        .replace(new RegExp("\r", "g"), "") //Remove any \r characters.
+        .replace(new RegExp("\n", "g"), "") //Remoce any \n characters.
+        .split(" ");                        //Split it among spaces.
+
+    //If the message's first character is not the activation symbol, return.
+    if (message[0].substr(0, 1) !== "!") {
+        return;
+    }
+
+    if (
+        //Create an user if they don't have an account already.
+        //If they didn't have an account, and create returned true...
+        (await process.core.users.create(sender)) ||
+        //Or if they need to be notified...
+        (await process.core.users.getNotify(sender))
+    ) {
+        //Give them the notified warning.
+        const legalstuff = "By continuing to use this bot, you agree to release the creator, owners, all maintainers of the bot, and the " + process.settings.coin.symbol + " Team from any legal liability.\r\n\r\nPlease run your previous command again.";
+        const params = {
+            icon_emoji: ':frank:'
+        };
+        process.slackClient.postMessage(channel, legalstuff, params)
+            .then((data) => {
+                console.log("message posted. data:", data);
+            })
+            .fail((data) => {
+                console.log("send message fail");
+                console.log('data', data);
+            })
+        //Mark them as notified.
+        await process.core.users.setNotified(sender);
+        return;
+    }
+
+    // Remove the activation symbol.
+    message[0] = message[0].substring(1, message[0].length);
+
+    //If the command is channel locked...
+    if (typeof(process.settings.commands[message[0]]) !== "undefined") {
+        //And this is not an approved channel...
+        if (process.settings.commands[message[0]].indexOf(channel) === -1) {
+            //Print where it can be used.
+            // msg.reply("That command can only be run in:\r\n<#" + process.settings.commands[text[0]].join(">\r\n<#") + ">");
+            log("That command can only be run in:\r\n<#" + process.settings.commands[text[0]].join(">\r\n<#") + ">");
+            return;
+        }
+    }
+
+    //if we made it to this point, parse the message.
+    parseMsg({
+        text: message,
+        sender: sender,
+        obj: msg,
+        platform: 'slack'
     });
 }
 
@@ -111,17 +213,32 @@ async function main() {
         giveaway: require("./commands/giveaway.js")
     };
 
-    //Create a Discord process.client.
-    process.client = new (require("discord.js")).Client();
+    //Create a Discord process.discordClient.
+    process.discordClient = new (DiscordBot).Client();
 
-    //Handle messages.
-    process.client.on("message", handleMessage);
-    process.client.on("messageUpdate", async (oldMsg, msg) => {
-        handleMessage(msg);
+    //Create a slack process.slackClient.
+    process.slackClient = new SlackBot({
+        token: process.settings.slack.token,
+        name: process.settings.slack.name
     });
 
+    process.discordClient.on("ready", () => {
+        console.log(`Logged in as ${process.discordClient.user.tag}!`);
+    });
+    process.slackClient.on('start', () => {
+        console.log('slack bot has started!')
+    });
+
+    //Handle messages.
+    process.discordClient.on("message", handleDiscordMessage);
+    process.discordClient.on("messageUpdate", async (oldMsg, msg) => {
+        handleDiscordMessage(msg);
+    });
+
+    process.slackClient.on('message', handleSlackMessage);
+
     //Connect.
-    process.client.login(process.settings.discord.token);
+    process.discordClient.login(process.settings.discord.token);
 }
 
 (async () => {

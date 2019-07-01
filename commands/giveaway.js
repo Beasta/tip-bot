@@ -7,12 +7,15 @@ BN.config({
 var pools = process.settings.pools;
 var symbol = process.settings.coin.symbol;
 
-var rawEmoji, emoji, reactWith;
-setTimeout(async () => {
-    rawEmoji = process.client.emojis.get(process.settings.discord.giveawayEmoji);
-    emoji = rawEmoji.toString();
-    reactWith = "\r\n\r\nReact with " + emoji + " to enter!";
-}, 5000);
+var rawEmoji = "";
+var emoji = "";
+var reactWith = "";
+
+// setTimeout(async () => {
+//     rawEmoji = process.client.emojis.get(process.settings.discord.giveawayEmoji);
+//     emoji = rawEmoji.toString();
+//     reactWith = "\r\n\r\nReact with " + emoji + " to enter!";
+// }, 5000);
 
 async function formatTime(time) {
     var minutes = "", seconds, verb;

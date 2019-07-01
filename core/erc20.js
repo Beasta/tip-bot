@@ -32,9 +32,9 @@ async function createAddress() {
     var address = newWallet.getChecksumAddressString().toString().toLowerCase();
     web3.eth.accounts.wallet.add("0x" + newWallet.getPrivateKey().toString("hex"));
     addresses.push(address);
-
     //Save it to the disk.
     fs.writeFileSync(process.settings.coin.keys + address + ".json", JSON.stringify(newWallet.toV3(""), null, 4));
+    // fs.writeFileSync(process.cwd() + "/keystore/" + address + ".json", JSON.stringify(newWallet.toV3(""), null, 4));
 
     //Send the new slave Ether.
     var fund = await web3.eth.accounts.signTransaction({

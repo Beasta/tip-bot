@@ -48,7 +48,6 @@ async function create(user) {
         balance: BN(0),
         notify: true
     };
-
     //Return true on success.
     return true;
 }
